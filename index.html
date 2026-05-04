@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCI Haney Soil Health Interpreter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sci-earth:      #3D2F1E;
+    --sci-clay:       #A8551F;
+    --sci-leaf:       #3F5C3A;
+    --sci-leaf-deep:  #2B4028;
+    --sci-moss:       #6B7F4B;
+    --sci-cream:      #F5EFE3;
+    --sci-sand:       #E6D5B2;
+    --sci-silt:       #BFAA85;
+    --sci-ink:        #1C1A16;
+    --sci-muted:      #6B6458;
+    --sci-line:       #D9CEB5;
+
+    /* Range band colors */
+    --low-bg:         #FDE8E8;
+    --low-text:       #B91C1C;
+    --below-bg:       #FEF3C7;
+    --below-text:     #92400E;
+    --avg-bg:         #DBEAFE;
+    --avg-text:       #1E40AF;
+    --above-bg:       #D1FAE5;
+    --above-text:     #065F46;
+    --high-bg:        #EDE9FE;
+    --high-text:      #5B21B6;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: transparent;
+    color: var(--sci-ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+  }
+
+  /* ── Page wrapper ── */
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px 40px;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--sci-line);
+    padding-bottom: 20px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--sci-clay);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 22px;
+    height: 1px;
+    background: var(--sci-clay);
+  }
+  .page-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 40px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    color: var(--sci-earth);
+    margin-bottom: 8px;
+  }
+  .page-title em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--sci-leaf-deep);
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--sci-muted);
+    max-width: 560px;
+  }
+
+  /* ── Input grid ── */
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 560px) {
+    .inputs-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--sci-muted);
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--sci-line);
+    border-radius: 6px;
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--sci-earth);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    -moz-appearance: textfield;
+  }
+  .field input::-webkit-outer-spin-button,
+  .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field input:focus {
+    border-color: var(--sci-leaf);
+    box-shadow: 0 0 0 3px rgba(63, 92, 58, 0.12);
+  }
+  .field input::placeholder { color: var(--sci-sand); }
+
+  /* ── Action row ── */
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .btn-analyze {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 26px;
+    background: var(--sci-leaf-deep);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.1s ease;
+  }
+  .btn-analyze:hover { background: var(--sci-leaf); }
+  .btn-analyze:active { transform: scale(0.98); }
+  .btn-reset {
+    background: none;
+    border: 1.5px solid var(--sci-line);
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sci-muted);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-reset:hover { border-color: var(--sci-silt); color: var(--sci-earth); }
+
+  /* ── Results panel ── */
+  .results-panel {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    border: 1.5px solid var(--sci-line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .results-panel.visible { display: flex; }
+
+  /* Results header */
+  .results-header {
+    background: var(--sci-leaf-deep);
+    color: #fff;
+    padding: 16px 24px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .results-header span {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .results-header span:first-child { opacity: 1; font-size: 11px; }
+
+  /* Result row */
+  .result-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--sci-line);
+    transition: background 0.15s ease;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row:nth-child(even) { background: #FAFAF8; }
+  .result-row:hover { background: var(--sci-cream); }
+
+  .row-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--sci-earth);
+  }
+  .row-name small {
+    display: block;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--sci-muted);
+    margin-top: 1px;
+  }
+
+  .band-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 48px;
+  }
+  .band-chip.low    { background: var(--low-bg);   color: var(--low-text); }
+  .band-chip.below  { background: var(--below-bg);  color: var(--below-text); }
+  .band-chip.avg    { background: var(--avg-bg);    color: var(--avg-text); }
+  .band-chip.above  { background: var(--above-bg);  color: var(--above-text); }
+  .band-chip.high   { background: var(--high-bg);   color: var(--high-text); }
+  .band-chip.empty  { background: #F3F4F6; color: #9CA3AF; font-weight: 400; font-style: italic; }
+
+  .entered-val {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--sci-earth);
+  }
+  .entered-val.dim { color: var(--sci-silt); font-size: 13px; font-style: italic; font-family: 'Inter', sans-serif; }
+
+  /* Interpretation note */
+  .interp-note {
+    font-size: 12px;
+    color: var(--sci-muted);
+    grid-column: 1 / -1;
+    display: none;
+    padding-top: 4px;
+  }
+
+  /* ── Summary callout ── */
+  .summary-card {
+    display: none;
+    margin-top: 20px;
+    background: var(--sci-cream);
+    border: 1.5px solid var(--sci-line);
+    border-radius: 10px;
+    padding: 20px 24px;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .summary-card.visible { display: flex; }
+  .summary-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--sci-leaf-deep);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .summary-icon svg { width: 20px; height: 20px; color: #fff; }
+  .summary-body {}
+  .summary-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sci-clay);
+    margin-bottom: 5px;
+  }
+  .summary-text {
+    font-size: 13.5px;
+    color: var(--sci-earth);
+    line-height: 1.6;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .legend-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--sci-muted);
+    margin-right: 4px;
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--sci-muted);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .legend-dot.low    { background: var(--low-text); }
+  .legend-dot.below  { background: var(--below-text); }
+  .legend-dot.avg    { background: var(--avg-text); }
+  .legend-dot.above  { background: var(--above-text); }
+  .legend-dot.high   { background: var(--high-text); }
+
+  /* ── Mobile: stack grid ── */
+  @media (max-width: 640px) {
+    .results-header,
+    .result-row {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+    }
+    .results-header { display: none; }
+    .result-row { padding: 14px 16px; gap: 10px; }
+    .page { padding: 20px 16px 32px; }
+    .action-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="eyebrow">Soil Health Tool</div>
+    <h1 class="page-title">Haney Soil Health <em>Interpreter</em></h1>
+    <p class="page-sub">Enter your Haney test results below to instantly see how each indicator compares to standard ranges and what it means for your soil.</p>
+  </div>
+
+  <!-- Inputs -->
+  <div class="inputs-grid" id="inputsGrid">
+    <div class="field">
+      <label class="field-label" for="inp_ph">1:1 Soil pH</label>
+      <input type="number" id="inp_ph" placeholder="e.g. 6.5" step="0.1" min="0" max="14">
+    </div>
+    <div class="field">
+      <label class="field-label" for="inp_om">Organic Matter %</label>
+      <input type="number" id="inp_om" placeholder="e.g. 3.5" step="0.1" min="0">
+    </div>
+    <div class="field">
+      <label class="field-label" for="inp_co2">CO₂-C (ppm)</label>
+      <input type="number" id="inp_co2" placeholder="e.g. 45" step="1" min="0">
+    </div>
+    <div class="field">
+      <label class="field-label" for="inp_cn">Organic C:N Ratio</label>
+      <input type="number" id="inp_cn" placeholder="e.g. 11" step="0.1" min="0">
+    </div>
+    <div class="field">
+      <label class="field-label" for="inp_shc">Soil Health Calc.</label>
+      <input type="number" id="inp_shc" placeholder="e.g. 8" step="0.1" min="0">
+    </div>
+    <div class="field">
+      <label class="field-label" for="inp_mac">% MAC</label>
+      <input type="number" id="inp_mac" placeholder="e.g. 25" step="0.1" min="0">
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row">
+    <button class="btn-analyze" id="btnAnalyze">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Interpret Results
+    </button>
+    <button class="btn-reset" id="btnReset">Clear</button>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend" id="legendRow" style="display:none;">
+    <span class="legend-label">Range:</span>
+    <span class="legend-item"><span class="legend-dot low"></span>Low</span>
+    <span class="legend-item"><span class="legend-dot below"></span>Below Avg</span>
+    <span class="legend-item"><span class="legend-dot avg"></span>Average</span>
+    <span class="legend-item"><span class="legend-dot above"></span>Above Avg</span>
+    <span class="legend-item"><span class="legend-dot high"></span>High</span>
+  </div>
+
+  <!-- Results table -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-header">
+      <span>Indicator</span>
+      <span>Your Value</span>
+      <span>Low</span>
+      <span>Below Avg</span>
+      <span>Average</span>
+      <span>Above Avg</span>
+    </div>
+    <!-- Rows injected by JS -->
+  </div>
+
+  <!-- Summary callout -->
+  <div class="summary-card" id="summaryCard">
+    <div class="summary-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v20"/><path d="M12 12C8 12 4 8 4 4c4 0 8 4 8 8z"/><path d="M12 14c4 0 8-4 8-8-4 0-8 4-8 8z"/>
+      </svg>
+    </div>
+    <div class="summary-body">
+      <div class="summary-label">Regenerative Insight</div>
+      <p class="summary-text" id="summaryText"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── Indicator definitions ── */
+const INDICATORS = [
+  {
+    id: 'ph',
+    name: '1:1 Soil pH',
+    unit: '',
+    bands: [
+      { key: 'low',   label: '<5.5',   test: v => v < 5.5 },
+      { key: 'below', label: '5.5–6.0', test: v => v >= 5.5 && v < 6.0 },
+      { key: 'avg',   label: '6.0–7.0', test: v => v >= 6.0 && v < 7.0 },
+      { key: 'above', label: '7.0–7.5', test: v => v >= 7.0 && v <= 7.5 },
+      { key: 'high',  label: '>7.5',   test: v => v > 7.5 },
+    ],
+    insights: {
+      low:   'Strongly acidic — lime applications and pH management are a priority. Very low pH restricts nutrient availability and microbial activity.',
+      below: 'Slightly acidic. Many crops tolerate this range, but consider liming to push toward 6.0–7.0 for broader nutrient availability.',
+      avg:   'Optimal pH range. Nutrient availability is maximized and beneficial soil biology thrives in this window.',
+      above: 'Mildly alkaline. Monitor micronutrient availability (iron, manganese, zinc) which can become limited above 7.0.',
+      high:  'High alkalinity may tie up micronutrients. Assess irrigation water quality and consider soil acidification strategies.',
+    }
+  },
+  {
+    id: 'om',
+    name: 'Organic Matter',
+    unit: '%',
+    bands: [
+      { key: 'low',   label: '<2.0',   test: v => v < 2.0 },
+      { key: 'below', label: '2.0–3.0', test: v => v >= 2.0 && v < 3.0 },
+      { key: 'avg',   label: '3.0–4.0', test: v => v >= 3.0 && v < 4.0 },
+      { key: 'above', label: '4.0–5.0', test: v => v >= 4.0 && v <= 5.0 },
+      { key: 'high',  label: '>5.0',   test: v => v > 5.0 },
+    ],
+    insights: {
+      low:   'Low organic matter — significant investment in cover crops, compost, and reduced tillage is needed. Every 1% increase in OM can hold 20,000+ gal/acre more water.',
+      below: 'Building phase. You\'re on the lower end — prioritize cover crops, diverse rotations, and minimizing tillage to steadily build this number.',
+      avg:   'Solid organic matter level. Maintaining continuous living cover and reducing disturbance will keep this trending upward.',
+      above: 'Strong organic matter. Your soil is holding good reserves of carbon, water, and nutrients. Continue the practices that got you here.',
+      high:  'Exceptional organic matter. This level provides outstanding water-holding capacity, nutrient cycling, and biological activity.',
+    }
+  },
+  {
+    id: 'co2',
+    name: 'CO₂-C',
+    unit: 'ppm',
+    bands: [
+      { key: 'low',   label: '<10',    test: v => v < 10 },
+      { key: 'below', label: '10–30',  test: v => v >= 10 && v < 30 },
+      { key: 'avg',   label: '30–50',  test: v => v >= 30 && v < 50 },
+      { key: 'above', label: '50–100', test: v => v >= 50 && v <= 100 },
+      { key: 'high',  label: '>100',   test: v => v > 100 },
+    ],
+    insights: {
+      low:   'Very low microbial respiration — the soil food web is largely dormant. Focus on feeding soil biology with cover crops and diverse residues.',
+      below: 'Below average biological activity. Increasing organic inputs and reducing tillage will support a more active microbial community.',
+      avg:   'Moderate microbial activity. Your soil biology is functioning. Maintain organic inputs and living roots to sustain this level.',
+      above: 'Good biological activity — microbes are actively cycling nutrients. This is a sign of a responsive, living soil.',
+      high:  'Exceptional microbial respiration. Your soil is biologically rich, cycling nutrients efficiently and building long-term fertility.',
+    }
+  },
+  {
+    id: 'cn',
+    name: 'Organic C:N Ratio',
+    unit: '',
+    bands: [
+      { key: 'low',   label: '<8',     test: v => v < 8 },
+      { key: 'below', label: '8–10',   test: v => v >= 8 && v < 10 },
+      { key: 'avg',   label: '10–12',  test: v => v >= 10 && v < 12 },
+      { key: 'above', label: '12–15',  test: v => v >= 12 && v <= 15 },
+      { key: 'high',  label: '>15',    test: v => v > 15 },
+    ],
+    insights: {
+      low:   'Very low C:N ratio indicates rapid decomposition and potential nitrogen loss. Consider more carbon-rich residues in your rotation.',
+      below: 'C:N is slightly narrow. Nitrogen may mineralize quickly. High-carbon residues (straw, corn stalks) in cover crop mixes can help balance.',
+      avg:   'Balanced C:N ratio. Organic matter is decomposing at a steady rate, supporting consistent nutrient release.',
+      above: 'Good C:N ratio — carbon is accumulating relative to nitrogen, which is positive for long-term soil organic matter building.',
+      high:  'High C:N ratio. Decomposition may be slower and temporary nitrogen tie-up could occur. Ensure adequate nitrogen for cash crops.',
+    }
+  },
+  {
+    id: 'shc',
+    name: 'Soil Health Calculation',
+    unit: '',
+    bands: [
+      { key: 'low',   label: '<5',     test: v => v < 5 },
+      { key: 'below', label: '5–7',    test: v => v >= 5 && v < 7 },
+      { key: 'avg',   label: '7–10',   test: v => v >= 7 && v < 10 },
+      { key: 'above', label: '10–15',  test: v => v >= 10 && v <= 15 },
+      { key: 'high',  label: '>15',    test: v => v > 15 },
+    ],
+    insights: {
+      low:   'Soil health score indicates significant limitations in biological function. A holistic approach — cover crops, reduced tillage, diverse rotations — is needed.',
+      below: 'Below average soil health. There is clear room to improve. Targeted practices can show measurable gains within 2–3 seasons.',
+      avg:   'Average soil health. Your system is functional — refining and layering regenerative practices will move the score higher over time.',
+      above: 'Above average soil health. Your regenerative practices are working. Continue building on this foundation.',
+      high:  'Excellent soil health score. This reflects a highly functional, biologically active system capable of supplying plant needs efficiently.',
+    }
+  },
+  {
+    id: 'mac',
+    name: '% MAC',
+    unit: '%',
+    bands: [
+      { key: 'low',   label: '<10',    test: v => v < 10 },
+      { key: 'below', label: '10–20',  test: v => v >= 10 && v < 20 },
+      { key: 'avg',   label: '20–30',  test: v => v >= 20 && v < 30 },
+      { key: 'above', label: '30–50',  test: v => v >= 30 && v <= 50 },
+      { key: 'high',  label: '>50',    test: v => v > 50 },
+    ],
+    insights: {
+      low:   'Very low microbial activity as a percent of carbon — the active fraction of your organic matter is minimal. Feed the biology.',
+      below: 'Below average microbial activity coefficient. Increasing diverse organic inputs and cover crops will activate a greater proportion of your soil carbon.',
+      avg:   'Average microbial activity coefficient. Soil biology is moderately active relative to total carbon.',
+      above: 'Good MAC — a meaningful portion of your organic carbon is biologically active. This reflects a responsive, living soil system.',
+      high:  'Exceptional microbial activity coefficient. Your soil biology is extremely active relative to total carbon — a sign of a highly productive system.',
+    }
+  }
+];
+
+const bandOrder = ['low', 'below', 'avg', 'above', 'high'];
+const bandLabels = { low: 'Low', below: 'Below Avg', avg: 'Average', above: 'Above Avg', high: 'High' };
+
+function classifyValue(indicator, value) {
+  for (const band of indicator.bands) {
+    if (band.test(value)) return band.key;
+  }
+  return null;
+}
+
+function buildRow(indicator, value) {
+  const hasValue = value !== '' && value !== null && !isNaN(value);
+  const numVal = hasValue ? parseFloat(value) : null;
+  const bandKey = hasValue ? classifyValue(indicator, numVal) : null;
+
+  const row = document.createElement('div');
+  row.className = 'result-row';
+
+  // Name cell
+  const nameCell = document.createElement('div');
+  nameCell.className = 'row-name';
+  nameCell.innerHTML = indicator.name + (indicator.unit ? `<small>${indicator.unit}</small>` : '');
+  row.appendChild(nameCell);
+
+  // Value cell
+  const valCell = document.createElement('div');
+  if (hasValue) {
+    valCell.className = 'entered-val';
+    valCell.textContent = numVal % 1 === 0 ? numVal : numVal.toFixed(1);
+  } else {
+    valCell.className = 'entered-val dim';
+    valCell.textContent = '—';
+  }
+  row.appendChild(valCell);
+
+  // Band cells
+  for (const bk of ['low', 'below', 'avg', 'above', 'high']) {
+    const cell = document.createElement('div');
+    const bandDef = indicator.bands.find(b => b.key === bk);
+    if (hasValue && bandKey === bk) {
+      cell.innerHTML = `<span class="band-chip ${bk}">${bandLabels[bk]}</span>`;
+    } else if (hasValue) {
+      // show range label dimly
+      cell.style.fontSize = '11px';
+      cell.style.color = 'var(--sci-silt)';
+      cell.textContent = bandDef ? bandDef.label : '';
+    } else {
+      cell.style.fontSize = '11px';
+      cell.style.color = 'var(--sci-line)';
+      cell.textContent = bandDef ? bandDef.label : '';
+    }
+    row.appendChild(cell);
+  }
+
+  return { row, bandKey };
+}
+
+function buildSummary(results) {
+  const entered = results.filter(r => r.bandKey !== null);
+  if (entered.length === 0) return null;
+
+  const counts = {};
+  for (const bk of bandOrder) counts[bk] = 0;
+  for (const r of entered) counts[r.bandKey]++;
+
+  // Determine overall picture
+  const lowCount   = counts.low + counts.below;
+  const highCount  = counts.above + counts.high;
+  const avgCount   = counts.avg;
+
+  // Find weakest indicator
+  const weakest = results.find(r => r.bandKey === 'low') || results.find(r => r.bandKey === 'below');
+  const strongest = results.find(r => r.bandKey === 'high') || results.find(r => r.bandKey === 'above');
+
+  let summary = '';
+  if (lowCount > highCount + avgCount) {
+    summary = `Your results indicate a soil system with significant room to improve across multiple indicators. Prioritize building organic matter, feeding soil biology with diverse cover crops, and minimizing tillage disturbance. Small consistent changes compound into meaningful gains over 2–4 seasons.`;
+  } else if (lowCount === 0 && highCount >= entered.length - 1) {
+    summary = `Outstanding soil health profile. Your results reflect a highly functional, biologically active system. Continue the regenerative practices driving these results — you're building long-term resilience and productivity.`;
+  } else if (highCount >= lowCount) {
+    summary = `Your soil is performing well overall. ${strongest ? `Strong ${strongest.indicator.name} is a real asset. ` : ''}${weakest ? `Focus additional attention on ${weakest.indicator.name} to round out your soil health profile.` : 'Keep building on the practices that are working.'}`;
+  } else {
+    summary = `A mixed picture with real opportunity. ${weakest ? `${weakest.indicator.name} stands out as a priority area. ` : ''}Focus on the lowest-scoring indicators first — improving biological activity and organic matter tends to lift multiple metrics simultaneously.`;
+  }
+
+  return summary;
+}
+
+function analyze() {
+  const panel = document.getElementById('resultsPanel');
+  const summaryCard = document.getElementById('summaryCard');
+  const summaryText = document.getElementById('summaryText');
+  const legendRow   = document.getElementById('legendRow');
+
+  panel.innerHTML = '';
+
+  // Rebuild header
+  const header = document.createElement('div');
+  header.className = 'results-header';
+  header.innerHTML = '<span>Indicator</span><span>Your Value</span><span>Low</span><span>Below Avg</span><span>Average</span><span>Above Avg / High</span>';
+  panel.appendChild(header);
+
+  const resultData = [];
+
+  for (const ind of INDICATORS) {
+    const input = document.getElementById('inp_' + ind.id);
+    const rawVal = input ? input.value.trim() : '';
+    const { row, bandKey } = buildRow(ind, rawVal);
+    panel.appendChild(row);
+    resultData.push({ indicator: ind, bandKey });
+  }
+
+  const summary = buildSummary(resultData);
+
+  panel.classList.add('visible');
+  legendRow.style.display = 'flex';
+
+  if (summary) {
+    summaryText.textContent = summary;
+    summaryCard.classList.add('visible');
+  } else {
+    summaryCard.classList.remove('visible');
+  }
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function resetAll() {
+  INDICATORS.forEach(ind => {
+    const input = document.getElementById('inp_' + ind.id);
+    if (input) input.value = '';
+  });
+  document.getElementById('resultsPanel').classList.remove('visible');
+  document.getElementById('resultsPanel').innerHTML = '';
+  document.getElementById('summaryCard').classList.remove('visible');
+  document.getElementById('legendRow').style.display = 'none';
+}
+
+document.getElementById('btnAnalyze').addEventListener('click', analyze);
+document.getElementById('btnReset').addEventListener('click', resetAll);
+
+// Allow Enter key to trigger analysis
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
