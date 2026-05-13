@@ -408,80 +408,7 @@
   }
   .pdf-note.visible { display: block; }
 
-  .ph-spectrum-card {
-    display: none;
-    margin-top: 20px;
-    background: #fff;
-    border: 1.5px solid var(--sci-line);
-    border-radius: 10px;
-    padding: 18px 20px;
-  }
-  .ph-spectrum-card.visible { display: block; }
-  .ph-spectrum-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .ph-spectrum-title {
-    font-family: 'Fraunces', serif;
-    font-size: 20px;
-    color: var(--sci-earth);
-  }
-  .ph-spectrum-value {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--sci-clay);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .ph-bar-wrap { position: relative; padding-top: 22px; }
-  .ph-bar {
-    height: 16px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #C2410C 0%, #FACC15 42%, #22C55E 50%, #60A5FA 72%, #4338CA 100%);
-    border: 1px solid rgba(61,47,30,0.18);
-  }
-  .ph-marker {
-    position: absolute;
-    top: 0;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .ph-marker-label {
-    background: var(--sci-earth);
-    color: #fff;
-    border-radius: 5px;
-    padding: 2px 6px;
-    font-size: 11px;
-    font-weight: 700;
-  }
-  .ph-marker-pin {
-    width: 2px;
-    height: 22px;
-    background: var(--sci-earth);
-  }
-  .ph-scale {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
-    font-size: 11px;
-    color: var(--sci-muted);
-  }
-  .ph-spectrum-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--sci-earth);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+
 
   /* ── Mobile: stack grid ── */
   @media (max-width: 640px) {
@@ -584,22 +511,6 @@
   </div>
 
 
-  <!-- pH Scale -->
-  <div class="ph-spectrum-card" id="phSpectrumCard">
-    <div class="ph-spectrum-head">
-      <div class="ph-spectrum-title">pH Scale</div>
-      <div class="ph-spectrum-value" id="phSpectrumValue">pH: --</div>
-    </div>
-    <div class="ph-bar-wrap">
-      <div class="ph-marker" id="phMarker" style="left: 50%;">
-        <span class="ph-marker-label" id="phMarkerLabel">7.0</span>
-        <span class="ph-marker-pin"></span>
-      </div>
-      <div class="ph-bar"></div>
-      <div class="ph-scale"><span>0</span><span>3.5</span><span>7.0</span><span>10.5</span><span>14</span></div>
-      <div class="ph-spectrum-labels"><span>Acidic</span><span>Neutral = 7</span><span>Alkaline</span></div>
-    </div>
-  </div>
 
 </div>
 
@@ -811,26 +722,6 @@ function buildSummary(results) {
   return summary;
 }
 
-function updatePhSpectrum(rawValue) {
-  const card = document.getElementById('phSpectrumCard');
-  const marker = document.getElementById('phMarker');
-  const markerLabel = document.getElementById('phMarkerLabel');
-  const spectrumValue = document.getElementById('phSpectrumValue');
-  const val = parseFloat(rawValue);
-  if (Number.isNaN(val)) {
-    card.classList.remove('visible');
-    return;
-  }
-  const clamped = Math.max(0, Math.min(14, val));
-  const percent = (clamped / 14) * 100;
-  marker.style.left = percent + '%';
-  markerLabel.textContent = val % 1 === 0 ? String(val) : val.toFixed(1);
-  let zone = 'Neutral';
-  if (val < 7.0) zone = 'Acidic';
-  else if (val > 7.0) zone = 'Alkaline';
-  spectrumValue.textContent = 'pH: ' + (val % 1 === 0 ? String(val) : val.toFixed(1)) + ' • ' + zone;
-  card.classList.add('visible');
-}
 
 function analyze() {
   const panel = document.getElementById('resultsPanel');
@@ -852,7 +743,6 @@ function analyze() {
     panel.appendChild(row);
   }
 
-  updatePhSpectrum(document.getElementById('inp_ph').value.trim());
   panel.classList.add('visible');
   legendRow.style.display = 'flex';
   btnPdf.classList.add('visible');
@@ -874,7 +764,6 @@ function resetAll() {
   document.getElementById('legendRow').style.display = 'none';
   document.getElementById('btnPdf').classList.remove('visible');
   document.getElementById('pdfNotice').classList.remove('visible');
-  document.getElementById('phSpectrumCard').classList.remove('visible');
 }
 
 function cleanPdfText(text) {
@@ -1017,60 +906,6 @@ function downloadPdfReport() {
     line('No Haney indicator values were entered.', 10, 'normal', [107, 100, 88], 14);
   }
 
-  const phInput = document.getElementById('inp_ph').value.trim();
-  if (phInput && !isNaN(phInput)) {
-    const ph = parseFloat(phInput);
-    let zone = 'Neutral';
-    if (ph < 7.0) zone = 'Acidic';
-    else if (ph > 7.0) zone = 'Alkaline';
-
-    pageBreak(116);
-    y += 4;
-    line('pH Scale', 12, 'bold', [168, 85, 31], 16);
-    line('pH ' + (ph % 1 === 0 ? String(ph) : ph.toFixed(1)) + ' falls in the ' + zone + ' zone on a 0 to 14 scale where 7.0 is neutral.', 10, 'normal', [28, 26, 22], 13);
-    y += 10;
-
-    const barX = margin;
-    const barY = y;
-    const barW = maxW;
-    const barH = 18;
-    const neutralCenterX = barX + (7.0 / 14) * barW;
-    const neutralW = Math.max(18, barW * (0.35 / 14));
-    const neutralX = neutralCenterX - neutralW / 2;
-    const acidW = neutralX - barX;
-    const alkalineX = neutralX + neutralW;
-    const alkalineW = (barX + barW) - alkalineX;
-
-    doc.setDrawColor(217, 206, 181);
-    doc.setFillColor(232, 238, 244);
-    doc.rect(barX, barY, acidW, barH, 'FD');
-    doc.setFillColor(235, 244, 232);
-    doc.rect(neutralX, barY, neutralW, barH, 'FD');
-    doc.setFillColor(244, 238, 229);
-    doc.rect(alkalineX, barY, alkalineW, barH, 'FD');
-
-    const markerX = barX + (Math.max(0, Math.min(14, ph)) / 14) * barW;
-    doc.setDrawColor(61, 47, 30);
-    doc.setLineWidth(1.25);
-    doc.line(markerX, barY - 5, markerX, barY + barH + 6);
-    doc.setLineWidth(0.2);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(61, 47, 30);
-    doc.text('0', barX, barY + barH + 14);
-    doc.text('7.0 neutral', neutralCenterX - 22, barY + barH + 14);
-    doc.text('14', barX + barW - 10, barY + barH + 14);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Acidic', barX + acidW / 2 - 14, barY - 4);
-    doc.text('Neutral = 7', neutralCenterX - 24, barY - 4);
-    doc.text('Alkaline', alkalineX + alkalineW / 2 - 18, barY - 4);
-    doc.text('pH ' + (ph % 1 === 0 ? String(ph) : ph.toFixed(1)), markerX - 11, barY + barH + 30);
-
-    y += 68;
-  }
 
   pageBreak(70);
   y += 8;
