@@ -111,6 +111,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
   }
   .field-label {
     font-size: 11px;
@@ -121,6 +122,9 @@
   }
   .field input {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     padding: 10px 13px;
     border: 1.5px solid var(--sci-line);
     border-radius: 6px;
@@ -379,6 +383,11 @@
     font-size: 14px;
     font-weight: 500;
   }
+  .field input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    line-height: 1.25;
+  }
 
   .btn-pdf {
     display: none;
@@ -421,6 +430,7 @@
     .result-row { padding: 14px 16px; gap: 10px; }
     .page { padding: 20px 16px 32px; }
     .action-row { flex-wrap: wrap; }
+    .farm-grid, .inputs-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
