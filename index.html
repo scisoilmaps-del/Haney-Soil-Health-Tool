@@ -454,6 +454,14 @@
         <label class="field-label" for="sampleDate">Sample Date</label>
         <input type="date" id="sampleDate">
       </div>
+      <div class="field">
+        <label class="field-label" for="sampleDepthFrom">Sample Depth From (in)</label>
+        <input type="number" id="sampleDepthFrom" placeholder="e.g. 0" step="0.1" min="0">
+      </div>
+      <div class="field">
+        <label class="field-label" for="sampleDepthTo">Sample Depth To (in)</label>
+        <input type="number" id="sampleDepthTo" placeholder="e.g. 6" step="0.1" min="0">
+      </div>
     </div>
   </div>
 
@@ -765,7 +773,7 @@ function resetAll() {
     const input = document.getElementById('inp_' + ind.id);
     if (input) input.value = '';
   });
-  ['farmName', 'fieldId', 'sampleDate'].forEach(id => {
+  ['farmName', 'fieldId', 'sampleDate', 'sampleDepthFrom', 'sampleDepthTo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -819,6 +827,8 @@ function downloadPdfReport() {
   const farm = document.getElementById('farmName').value.trim() || 'Not provided';
   const field = document.getElementById('fieldId').value.trim() || 'Not provided';
   const date = document.getElementById('sampleDate').value || 'Not provided';
+  const depthFrom = document.getElementById('sampleDepthFrom').value.trim() || 'Not provided';
+  const depthTo = document.getElementById('sampleDepthTo').value.trim() || 'Not provided';
 
   function pageBreak(spaceNeeded = 60) {
     if (y + spaceNeeded > pageH - 48) {
@@ -865,6 +875,8 @@ function downloadPdfReport() {
   line('Farm / Operation: ' + farm, 10);
   line('Field / Sample ID: ' + field, 10);
   line('Sample Date: ' + date, 10);
+  line('Sample Depth From (in): ' + depthFrom, 10);
+  line('Sample Depth To (in): ' + depthTo, 10);
   y += 8;
 
   line('Haney Indicator Results', 12, 'bold', [168, 85, 31], 16);
